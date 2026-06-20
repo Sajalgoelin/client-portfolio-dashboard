@@ -7,6 +7,7 @@ from utils.sheets import load_portfolio_data
 from utils.benchmark import get_benchmark_data
 from utils.prices import fetch_current_prices
 from utils.portfolio import compute_summary_stats, build_return_series, enrich_open_positions
+from utils.nav import build_daily_nav
 from config import INITIAL_CAPITAL
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -43,6 +44,7 @@ current_prices = fetch_current_prices(open_names)
 stats = compute_summary_stats(trades, dividends, current_prices)
 return_series = build_return_series(trades)
 open_pos_df = enrich_open_positions(trades, current_prices)
+daily_nav = build_daily_nav(trades)
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.title("📊 Portfolio Performance")
@@ -117,49 +119,36 @@ p5.metric(
 st.divider()
 
 # ── Performance Chart ─────────────────────────────────────────────────────────
-st.subheader("Cumulative Return vs Benchmark")
+st.subheader("Portfolio NAV vs Benchmark")
 
 fig = go.Figure()
 
-# Portfolio realized return curve (step line)
-if not return_series.empty:
-    # Extend the last realized return point to today with a dashed line to signal "no new closes"
-    extended_x = list(return_series.index) + [pd.Timestamp(date.today())]
-    extended_y = list(return_series.values) + [float(return_series.iloc[-1])]
+# 1. Daily NAV curve — smooth line showing mark-to-market value every day
+if not daily_nav.empty:
+    fig.add_trace(go.Scatter(
+        x=daily_nav.index,
+        y=daily_nav.values,
+        mode="lines",
+        name="Portfolio NAV (daily)",
+        line=dict(color="#2ca02c", width=2),
+        hovertemplate="%{x|%d %b %Y}<br>NAV return: %{y:.2f}%<extra></extra>",
+        fill="tozeroy",
+        fillcolor="rgba(44,160,44,0.07)",
+    ))
 
+# 2. Realized return step line — shows only locked-in P&L at each trade close
+if not return_series.empty:
     fig.add_trace(go.Scatter(
         x=return_series.index,
         y=return_series.values,
         mode="lines+markers",
-        name="Portfolio (realized)",
+        name="Realized return (trade closes)",
         line=dict(color="#1f77b4", width=2.5, shape="hv"),
-        marker=dict(size=7),
-        hovertemplate="%{x|%d %b %Y}<br>Realized return: %{y:.2f}%<extra></extra>",
-    ))
-    # Dashed extension from last close to today
-    fig.add_trace(go.Scatter(
-        x=[return_series.index[-1], pd.Timestamp(date.today())],
-        y=[float(return_series.iloc[-1]), float(return_series.iloc[-1])],
-        mode="lines",
-        name="No new closes",
-        line=dict(color="#1f77b4", width=1.5, dash="dot"),
-        showlegend=False,
-        hoverinfo="skip",
+        marker=dict(size=7, color="#1f77b4"),
+        hovertemplate="%{x|%d %b %Y}<br>Realized: %{y:.2f}%<extra></extra>",
     ))
 
-# If live prices available, add a dot for total return (realized + unrealized)
-if stats["num_live_prices"] > 0:
-    total_return_pct = stats["total_return_pct"]
-    fig.add_trace(go.Scatter(
-        x=[pd.Timestamp(date.today())],
-        y=[total_return_pct],
-        mode="markers",
-        name="Total return (incl. unrealized)",
-        marker=dict(size=12, color="#2ca02c", symbol="diamond"),
-        hovertemplate=f"Today<br>Total return (realized + unrealized): {total_return_pct:.2f}%<extra></extra>",
-    ))
-
-# Benchmark line
+# 3. Benchmark line
 if not benchmark_df.empty:
     bm_indexed = (benchmark_df["close"] / benchmark_df["close"].iloc[0] - 1) * 100
     fig.add_trace(go.Scatter(
@@ -177,7 +166,7 @@ fig.update_layout(
     xaxis_title=None,
     hovermode="x unified",
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-    height=380,
+    height=420,
     margin=dict(l=0, r=0, t=30, b=0),
     plot_bgcolor="white",
     paper_bgcolor="white",
@@ -187,9 +176,9 @@ fig.update_yaxes(showgrid=True, gridcolor="#eeeeee", ticksuffix="%")
 
 st.plotly_chart(fig, use_container_width=True)
 st.caption(
-    "Blue line = realized return on ₹{:,.0f} initial capital (steps at each trade close). "
-    "Green diamond = total return including unrealized P&L on live prices today. "
-    "Orange = {} total return since inception.".format(INITIAL_CAPITAL, benchmark_label)
+    "Green = daily portfolio NAV (mark-to-market using historical prices). "
+    "Blue = realized return locked in at each trade close (step line). "
+    "Orange = {} return since inception.".format(benchmark_label)
 )
 
 st.divider()

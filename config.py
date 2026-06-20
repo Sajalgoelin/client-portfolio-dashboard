@@ -15,7 +15,10 @@ TICKER_MAP = {
     "TVS MOTORS":        "TVSMOTOR.NS",
     "TVS MOTOR":         "TVSMOTOR.NS",
     "SAMMAN CO":         "SAMMAANCAP.NS",
+    "SAMMAN CAPITAL":    "SAMMAANCAP.NS",
     "CUMMINSIND":        "CUMMINSIND.NS",
     "TATA CHEMICALS":    "TATACHEM.NS",
-    "GMDC":              "GMDC.NS",
+    "GMDC":              "GMDCLTD.NS",
+    "GMDCLTD":           "GMDCLTD.NS",
+    "ABCAPITAL":         "ABCAPITAL.NS",
 }

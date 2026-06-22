@@ -22,3 +22,22 @@ TICKER_MAP = {
     "GMDCLTD":           "GMDCLTD.NS",
     "ABCAPITAL":         "ABCAPITAL.NS",
 }
+
+# Map NSE ticker → sector (used for allocation pie chart).
+# Keyed by ticker without .NS suffix, upper-case.
+SECTOR_MAP = {
+    "ASIANPAINT":   "Basic Materials",
+    "DEN":          "Communication Services",
+    "IDFCFIRSTB":   "Financial Services",
+    "IOC":          "Energy",
+    "JIOFIN":       "Financial Services",
+    "TATACONSUM":   "Consumer Defensive",
+    "VOLTAS":       "Consumer Cyclical",
+    "HAL":          "Industrials",
+    "TVSMOTOR":     "Consumer Cyclical",
+    "SAMMAANCAP":   "Financial Services",
+    "CUMMINSIND":   "Industrials",
+    "TATACHEM":     "Basic Materials",
+    "GMDCLTD":      "Energy",
+    "ABCAPITAL":    "Financial Services",
+}

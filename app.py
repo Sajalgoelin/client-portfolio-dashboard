@@ -3,14 +3,15 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import date
 
-from utils.sheets import load_portfolio_data
 from utils.benchmark import get_benchmark_data
 from utils.prices import fetch_current_prices
 from utils.portfolio import compute_summary_stats, build_return_series, enrich_open_positions
 from utils.nav import build_daily_nav
-from config import INITIAL_CAPITAL
+from utils.sectors import get_sector
+from utils.sheets import load_portfolio_data
+from config import INITIAL_CAPITAL, TICKER_MAP
 
-# ── Page config ───────────────────────────────────────────────────────────────
+# ── Page config (must be first Streamlit call) ────────────────────────────────
 st.set_page_config(
     page_title="Portfolio Dashboard",
     page_icon="📈",
@@ -18,11 +19,30 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-st.markdown("""
-<style>
-div[data-testid="metric-container"] { background:#f8f9fa; border-radius:8px; padding:12px 16px; }
-</style>
-""", unsafe_allow_html=True)
+# ── Password gate ─────────────────────────────────────────────────────────────
+def _check_password():
+    def _verify():
+        if st.session_state.get("pwd_input") == st.secrets.get("password", ""):
+            st.session_state["authenticated"] = True
+        else:
+            st.session_state["authenticated"] = False
+
+    if st.session_state.get("authenticated"):
+        return True
+
+    st.title("📈 Portfolio Dashboard")
+    st.text_input("Enter password", type="password", key="pwd_input", on_change=_verify)
+    if st.session_state.get("authenticated") is False:
+        st.error("Incorrect password.")
+    st.stop()
+
+_check_password()
+
+st.markdown(
+    "<style>div[data-testid='metric-container']"
+    "{background:#f8f9fa;border-radius:8px;padding:12px 16px;}</style>",
+    unsafe_allow_html=True,
+)
 
 # ── Data loading ──────────────────────────────────────────────────────────────
 trades, dividends = load_portfolio_data()
@@ -217,6 +237,53 @@ if not open_pos_df.empty:
             f"\\* Live price unavailable for: {', '.join(no_price)}. "
             "Showing buy price as placeholder. Add NSE ticker to `config.py → TICKER_MAP`."
         )
+
+    # ── Allocation pie charts ──────────────────────────────────────────────────
+    st.subheader("Portfolio Allocation")
+    pie_left, pie_right = st.columns(2)
+
+    # Position-wise pie
+    with pie_left:
+        pos_labels = open_pos_df["name"].tolist()
+        pos_values = open_pos_df["current_value"].tolist()
+        fig_pos = go.Figure(go.Pie(
+            labels=pos_labels,
+            values=pos_values,
+            hole=0.45,
+            textinfo="label+percent",
+            hovertemplate="<b>%{label}</b><br>₹%{value:,.0f} (%{percent})<extra></extra>",
+        ))
+        fig_pos.update_layout(
+            title_text="By Position",
+            height=360,
+            margin=dict(l=0, r=0, t=40, b=0),
+            showlegend=False,
+        )
+        st.plotly_chart(fig_pos, use_container_width=True)
+
+    # Sector-wise pie
+    with pie_right:
+        sector_values: dict[str, float] = {}
+        for _, row in open_pos_df.iterrows():
+            ticker = TICKER_MAP.get(row["name"].strip(), "")
+            sector = get_sector(ticker) if ticker else "Other"
+            sector_values[sector] = sector_values.get(sector, 0.0) + float(row["current_value"])
+
+        fig_sec = go.Figure(go.Pie(
+            labels=list(sector_values.keys()),
+            values=list(sector_values.values()),
+            hole=0.45,
+            textinfo="label+percent",
+            hovertemplate="<b>%{label}</b><br>₹%{value:,.0f} (%{percent})<extra></extra>",
+        ))
+        fig_sec.update_layout(
+            title_text="By Sector",
+            height=360,
+            margin=dict(l=0, r=0, t=40, b=0),
+            showlegend=False,
+        )
+        st.plotly_chart(fig_sec, use_container_width=True)
+
 else:
     st.info("No open positions.")
 

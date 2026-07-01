@@ -21,6 +21,7 @@ TICKER_MAP = {
     "GMDC":              "GMDCLTD.NS",
     "GMDCLTD":           "GMDCLTD.NS",
     "ABCAPITAL":         "ABCAPITAL.NS",
+    "BHEL":              "BHEL.NS",
 }
 
 # Map NSE ticker → sector (used for allocation pie chart).
@@ -40,4 +41,5 @@ SECTOR_MAP = {
     "TATACHEM":     "Basic Materials",
     "GMDCLTD":      "Energy",
     "ABCAPITAL":    "Financial Services",
+    "BHEL":         "Industrials",
 }

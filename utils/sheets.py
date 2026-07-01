@@ -5,14 +5,14 @@ from io import StringIO
 
 SHEET_ID = "1C1LhV_oMb3VzaCLT2_6M2esmvDGfIZwTtqj0DnehcmY"
 
-# Column positions in the raw CSV (0-indexed)
-# NO | OPENING | CLOSING(date) | NAME | SEGMENT | COMM | QTY | TRADE PRICE |
+# Sheet columns (20 total, 0-indexed):
+# OPENING | CLOSING(date) | NAME | SEGMENT | COMM | QTY | TRADE PRICE |
 # CLOSING(price) | TRADE PRICE AFTER COMM | CLOSING PRICE AFTER COMM |
 # STOP LOSS | TAKE PROFIT | NOTIONAL BUY BEFORE COMM | NOTIONAL SELL BEFORE COMM |
 # NOTIONAL BUY AFTER COMM | NOTIONAL SELL AFTER COMM | COMMISSION |
 # PROFIT/LOSS | PROFIT/LOSS% | NOTES
 TRADE_COL_NAMES = [
-    "trade_no", "opening_date", "closing_date", "name", "segment",
+    "opening_date", "closing_date", "name", "segment",
     "comm_rate", "qty", "trade_price", "closing_price",
     "trade_price_after_comm", "closing_price_after_comm",
     "stop_loss", "take_profit",

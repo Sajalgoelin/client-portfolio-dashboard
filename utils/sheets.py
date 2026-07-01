@@ -81,6 +81,19 @@ def load_portfolio_data():
     if "profit_loss_pct" in trades.columns:
         trades["profit_loss_pct"] = _to_num(trades["profit_loss_pct"])
 
+    # Fill missing notional columns from price × qty so calculations work even if
+    # the sheet doesn't have those cells filled in (e.g. a newly added position).
+    if "notional_buy_after_comm" in trades.columns:
+        missing = trades["notional_buy_after_comm"].isna()
+        trades.loc[missing, "notional_buy_after_comm"] = (
+            trades.loc[missing, "trade_price"] * trades.loc[missing, "qty"]
+        )
+    if "notional_sell_after_comm" in trades.columns:
+        missing = trades["notional_sell_after_comm"].isna() & trades["closing_price"].notna()
+        trades.loc[missing, "notional_sell_after_comm"] = (
+            trades.loc[missing, "closing_price"] * trades.loc[missing, "qty"]
+        )
+
     # Open trades: closing_date is null — zero out the placeholder P&L the sheet writes
     open_mask = trades["closing_date"].isna()
     trades.loc[open_mask, "profit_loss"] = pd.NA
